@@ -8,6 +8,13 @@ on:
 env:
   GHCR: ghcr.io
   IMAGE_NAME: tt-trichter/app
+  SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+  BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+  PUBLIC_GOOGLE_CLIENT_ID: 702596510444-k4j5n4vi5q0dkl3tomglpjgitkqcla71.apps.googleusercontent.com
 
 jobs:
   ghcr:
