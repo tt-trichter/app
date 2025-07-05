@@ -1,21 +1,21 @@
-import type { Run } from '$lib/models/run';
+import type { RunWithUser } from '$lib/models/run';
 import { ServerEvent } from '$lib/models/events';
 import { produce } from 'sveltekit-sse';
 import { resultEmitter } from '$lib/server/events';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = () => {
-	let onNew: (entry: Run) => void;
-	let onUpdate: (entry: Run) => void;
+	let onNew: (entry: RunWithUser) => void;
+	let onUpdate: (entry: RunWithUser) => void;
 
 	return produce(
 		async ({ emit }) => {
-			const send = (eventName: string, data: Run) => {
+			const send = (eventName: string, data: RunWithUser) => {
 				emit(eventName, JSON.stringify(data));
 			};
 
-			onNew = (entry: Run) => send(ServerEvent.RunCreated, entry);
-			onUpdate = (entry: Run) => send(ServerEvent.RunUpdated, entry);
+			onNew = (entry: RunWithUser) => send(ServerEvent.RunCreated, entry);
+			onUpdate = (entry: RunWithUser) => send(ServerEvent.RunUpdated, entry);
 
 			resultEmitter.on(ServerEvent.RunCreated, onNew);
 			resultEmitter.on(ServerEvent.RunUpdated, onUpdate);

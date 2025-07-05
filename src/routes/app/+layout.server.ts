@@ -8,7 +8,7 @@ export const load: LayoutServerLoad = async ({ request }) => {
 	});
 
 	if (!data?.user) {
-		redirect(302, '/signin');
+		redirect(302, '/auth/signin');
 	}
 
 	if (!data.user.emailVerified) {

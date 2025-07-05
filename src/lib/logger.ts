@@ -2,7 +2,6 @@ import { browser } from '$app/environment';
 import pino, { type LoggerOptions } from 'pino';
 import type { LokiOptions } from 'pino-loki';
 
-
 const defaultLogLevel: LoggerOptions['level'] = 'info';
 
 export function createLogger() {
@@ -13,7 +12,7 @@ export function createLogger() {
 		}
 	};
 
-	if (browser) {
+	if (browser || process.env.NODE_ENV != 'production') {
 		options.transport = {
 			target: 'pino-pretty',
 			options: { colorize: true, levelFirst: true, translateTime: true }
@@ -21,7 +20,6 @@ export function createLogger() {
 		return pino(options);
 	}
 
-	// On server: ship to Loki
 	const lokiTransport = pino.transport<LokiOptions>({
 		target: 'pino-loki',
 		options: {
@@ -40,4 +38,3 @@ export function createLogger() {
 }
 
 export const logger = createLogger();
-

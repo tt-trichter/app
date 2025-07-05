@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { authClient } from '$lib/auth/client';
+	import { logger } from '$lib/logger';
 	import { onMount } from 'svelte';
 
+	let username = $state('');
 	let name = $state('');
 	let email = $state('');
 	let password = $state('');
@@ -21,19 +23,38 @@
 		error = null;
 		loading = true;
 
+		logger.info('Attempting to sign up user with username:', username);
+
+		const displayName = name.trim() || username;
+
 		const { error: authError } = await authClient.signUp.email({
 			email,
 			password,
-			name
+			name: displayName,
+			username
 		});
 
 		if (authError) {
-			error = authError.message ?? null;
+			logger.error('Sign up failed:', authError.message);
+			error = authError.message ?? 'Sign up failed. Please try again.';
 			loading = false;
 			return;
 		}
 
+		logger.info('User successfully signed up with username:', username);
 		goto('/app');
+	}
+
+	async function signUpWithGoogle() {
+		try {
+			const data = await authClient.signIn.social({
+				provider: 'google'
+			});
+
+			logger.info('User signed up with Google:', data);
+		} catch (err) {
+			logger.error('Google sign up error:', err);
+		}
 	}
 </script>
 
@@ -41,27 +62,40 @@
 	<div class="mockup-window border-base-300 border">
 		<form class="p-10 pt-5" onsubmit={handleSubmit}>
 			<fieldset class="fieldset">
-				<legend class="fieldset-legend">What is your name?</legend>
-				<input type="text" class="input" placeholder="Type here" name="name" bind:value={name} />
-			</fieldset>
-			<fieldset class="fieldset">
-				<legend class="fieldset-legend">What is your email?</legend>
+				<legend class="fieldset-legend">Username *</legend>
 				<input
-					type="email"
-					class="input validator"
-					placeholder="Type here"
-					name="email"
-					bind:value={email}
+					type="text"
+					class="input"
+					placeholder="Enter your username"
+					name="username"
+					bind:value={username}
+					required
 				/>
 			</fieldset>
 			<fieldset class="fieldset">
-				<legend class="fieldset-legend">Password</legend>
+				<legend class="fieldset-legend">Name (optional)</legend>
+				<input type="text" class="input" placeholder="Your name" name="name" bind:value={name} />
+			</fieldset>
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Email *</legend>
+				<input
+					type="email"
+					class="input validator"
+					placeholder="Enter your email"
+					name="email"
+					bind:value={email}
+					required
+				/>
+			</fieldset>
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Password *</legend>
 				<input
 					type="password"
 					class="input validator"
-					placeholder="Type here"
+					placeholder="Enter your password"
 					name="password"
 					bind:value={password}
+					required
 				/>
 			</fieldset>
 			{#if error}
@@ -77,7 +111,12 @@
 						Sign Up
 					{/if}
 				</button>
-				<a class="text-info text-s text-center underline" href="/signin">SignIn instead</a>
+				<a class="text-info text-s text-center underline" href="/auth/signin">SignIn instead</a>
+
+				<div class="divider"></div>
+				<div class="flex justify-center">
+					<button class="btn" onclick={signUpWithGoogle} type="button">Sign Up with Google</button>
+				</div>
 			</div>
 		</form>
 	</div>

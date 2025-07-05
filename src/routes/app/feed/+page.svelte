@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-
-	goto('/app/leaderboard');
 </script>
+
+<h1 class="text-4xl font-bold">Feed</h1>

@@ -1,24 +1,33 @@
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, index } from 'drizzle-orm/pg-core';
 
-export const user = pgTable('user', {
-	id: text('id').primaryKey(),
-	name: text('name').notNull(),
-	email: text('email').notNull().unique(),
-	emailVerified: boolean('email_verified')
-		.$defaultFn(() => false)
-		.notNull(),
-	image: text('image'),
-	createdAt: timestamp('created_at')
-		.$defaultFn(() => /* @__PURE__ */ new Date())
-		.notNull(),
-	updatedAt: timestamp('updated_at')
-		.$defaultFn(() => /* @__PURE__ */ new Date())
-		.notNull(),
-	role: text('role'),
-	banned: boolean('banned'),
-	banReason: text('ban_reason'),
-	banExpires: timestamp('ban_expires')
-});
+export const user = pgTable(
+	'user',
+	{
+		id: text('id').primaryKey(),
+		name: text('name').notNull(),
+		email: text('email').notNull().unique(),
+		emailVerified: boolean('email_verified')
+			.$defaultFn(() => false)
+			.notNull(),
+		username: text('username').notNull().unique(),
+		displayUsername: text('display_username').notNull(),
+		image: text('image'),
+		createdAt: timestamp('created_at')
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		updatedAt: timestamp('updated_at')
+			.$defaultFn(() => /* @__PURE__ */ new Date())
+			.notNull(),
+		role: text('role'),
+		banned: boolean('banned'),
+		banReason: text('ban_reason'),
+		banExpires: timestamp('ban_expires')
+	},
+	(table) => [
+		index('user_username_idkx').on(table.username),
+		index('user_display_username_idkx').on(table.displayUsername)
+	]
+);
 
 export const session = pgTable('session', {
 	id: text('id').primaryKey(),

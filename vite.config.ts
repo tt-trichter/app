@@ -4,15 +4,17 @@ import { defineConfig } from 'vite';
 import { sentrySvelteKit } from '@sentry/sveltekit';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit(),
-	sentrySvelteKit({
-		sourceMapsUploadOptions: {
-			org: "trichter",
-			project: "javascript-sveltekit",
-			// store your auth token in an environment variable
-			authToken: process.env.SENTRY_AUTH_TOKEN,
-		}
-	}),
+	plugins: [
+		tailwindcss(),
+		sveltekit(),
+		sentrySvelteKit({
+			sourceMapsUploadOptions: {
+				org: 'trichter',
+				project: 'javascript-sveltekit',
+				// store your auth token in an environment variable
+				authToken: process.env.SENTRY_AUTH_TOKEN
+			}
+		})
 	],
 	test: {
 		projects: [
