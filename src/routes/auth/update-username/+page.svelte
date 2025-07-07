@@ -5,7 +5,6 @@
 	import { onMount } from 'svelte';
 
 	let username = $state('');
-	let password = $state('');
 
 	let error = $state<string | null>(null);
 	let loading = $state(false);

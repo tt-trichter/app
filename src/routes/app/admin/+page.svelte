@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { page } from '$app/stores';
 	import { Role } from '$lib/models/roles';
 	import type { PageData, ActionData } from './$types';
-	import { Plus, Edit, Trash2, Search, Check, X } from 'lucide-svelte';
+	import { Plus, Edit, Trash2, Check, X } from 'lucide-svelte';
 	import { toast } from '$lib/stores/toast.svelte.js';
+	import type { User } from '$lib/models/user';
 
 	let { data, form: rawForm }: { data: PageData; form: ActionData } = $props();
 	let form = $state(rawForm);
 
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
-	let selectedUser: any = $state(null);
+	let selectedUser: User | null = $state(null);
 	let searchTerm = $state('');
 
 	let filteredUsers = $derived(
@@ -19,8 +19,8 @@
 			(user) =>
 				user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 				user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				((user as any).username &&
-					(user as any).username.toLowerCase().includes(searchTerm.toLowerCase()))
+				((user as User).username &&
+					(user as User).username.toLowerCase().includes(searchTerm.toLowerCase()))
 		)
 	);
 
@@ -32,11 +32,8 @@
 		showCreateModal = false;
 	}
 
-	function openEditModal(user: any) {
+	function openEditModal(user: User) {
 		selectedUser = { ...user };
-		if (selectedUser.banExpires) {
-			selectedUser.banExpires = new Date(selectedUser.banExpires).toISOString().split('T')[0];
-		}
 		showEditModal = true;
 	}
 
@@ -63,8 +60,7 @@
 		return banned ? 'badge-warning' : 'badge-success';
 	}
 
-	let lastFormResult: any = $state(null);
-
+	let lastFormResult: ActionData | null = $state(null);
 	let pendingSubmissions = $state(new Set<string>());
 
 	$effect(() => {
@@ -112,6 +108,7 @@
 					loadingToastId = toast.loading('Processing...');
 			}
 
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			return async ({ result, update }: { result: any; update: () => void }) => {
 				pendingSubmissions.delete(submissionKey);
 
@@ -223,7 +220,7 @@
 										{/if}
 									</td>
 									<td>
-										<div class="font-mono">{(user as any).username || 'N/A'}</div>
+										<div class="font-mono">{(user as User).username || 'N/A'}</div>
 									</td>
 									<td>
 										<div class="badge {getRoleBadgeClass(user.role)}">

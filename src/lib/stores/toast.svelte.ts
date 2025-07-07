@@ -1,5 +1,3 @@
-import { logger } from 'better-auth';
-
 export type ToastType = 'success' | 'error' | 'info' | 'warning' | 'loading';
 
 export interface Toast {
@@ -28,15 +26,12 @@ function createToastStore(): ToastStore {
 	}
 
 	function add(toast: Omit<Toast, 'id'>): string {
-		// Check for duplicate messages of the same type within recent timeframe
 		const duplicateExists = toasts.some(
 			(existingToast) =>
 				existingToast.message === toast.message && existingToast.type === toast.type
 		);
 
-		// If duplicate exists, don't add a new toast
 		if (duplicateExists) {
-			// Return the ID of the existing toast
 			const existingToast = toasts.find(
 				(t) => t.message === toast.message && t.type === toast.type
 			);
@@ -47,11 +42,10 @@ function createToastStore(): ToastStore {
 		const newToast: Toast = {
 			id,
 			dismissible: true,
-			duration: toast.type === 'loading' ? 0 : 5000, // Loading toasts don't auto-dismiss
+			duration: toast.type === 'loading' ? 0 : 5000,
 			...toast
 		};
 
-		// Create new array instead of mutating
 		toasts = [...toasts, newToast];
 
 		// Auto-dismiss after duration (if duration > 0)
@@ -89,7 +83,6 @@ function createToastStore(): ToastStore {
 
 export const toastStore = createToastStore();
 
-// Convenience functions for different toast types
 export const toast = {
 	success: (message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message'>>) =>
 		toastStore.add({ type: 'success', message, ...options }),

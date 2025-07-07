@@ -47,10 +47,10 @@
 		}
 	});
 
-	function debounce(func: Function, delay: number) {
-		return (...args: any[]) => {
+	function debounce(func: (query: string) => Promise<void>, delay: number) {
+		return (query: string) => {
 			clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => func(...args), delay);
+			debounceTimer = setTimeout(() => func(query), delay);
 		};
 	}
 
@@ -174,7 +174,7 @@
 					<span class="ml-2 text-sm">Searching...</span>
 				</div>
 			{:else}
-				{#each suggestions as user, index}
+				{#each suggestions as user, index (user.id)}
 					<button
 						type="button"
 						class="hover:bg-base-200 border-base-200 w-full cursor-pointer border-b px-4 py-2 text-left last:border-b-0 {index ===

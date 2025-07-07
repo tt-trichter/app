@@ -1,4 +1,4 @@
-import { betterAuth, type User } from 'better-auth';
+import { betterAuth } from 'better-auth';
 import { admin, username } from 'better-auth/plugins';
 import { env } from '$env/dynamic/private';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
@@ -7,9 +7,6 @@ import { GOOGLE_CLIENT_SECRET } from '$env/static/private';
 import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
 import * as auth_schema from '$lib/server/db/schema/auth-schema';
 import { logger } from './logger';
-
-const isDev = env.NODE_ENV === 'development';
-const baseUrl = isDev ? 'http://localhost:5173' : 'https://trichter.hauptspeicher.com';
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -32,14 +29,15 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				before: async (user: any) => {
 					logger.info('Creating user:', user);
 					if (!user.username && user.name) {
 						let generatedUsername = user.name
 							.toLowerCase()
 							.replace(/[^a-z0-9]/g, '-')
-							.replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-							.replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+							.replace(/-+/g, '-')
+							.replace(/^-|-$/g, '');
 
 						if (!generatedUsername) {
 							generatedUsername = 'user';

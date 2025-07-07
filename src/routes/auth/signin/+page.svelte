@@ -22,7 +22,7 @@
 		error = null;
 		loading = true;
 
-		let authError: any = null;
+		let authError: Awaited<ReturnType<typeof signInWithEmail>> = null;
 		if (userLogin.includes('@')) {
 			logger.info('Attempting sign in with email');
 			authError = await signInWithEmail(userLogin, password);

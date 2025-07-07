@@ -25,12 +25,12 @@
 
 		logger.info('Attempting to sign up user with username:', username);
 
-		const displayName = name.trim() || username;
+		const realName = name.trim() || username;
 
 		const { error: authError } = await authClient.signUp.email({
 			email,
 			password,
-			name: displayName,
+			name: realName,
 			username
 		});
 

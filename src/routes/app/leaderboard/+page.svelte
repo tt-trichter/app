@@ -12,7 +12,6 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	// Sort runs by highest rate first
 	let runs: RunWithUser[] = $state((data.runs || []).sort((a, b) => b.data.rate - a.data.rate));
 	let totalRuns = $derived(runs.length);
 	let quickest = $derived.by(() => {
@@ -21,24 +20,18 @@
 			: null;
 	});
 
-	// Check if current user is admin
 	let isAdmin = $derived(data.user?.role === Role.Admin);
 
-	// Store selected users for each form
 	let selectedUsers: Record<
 		string,
 		{ id: string; name: string; username: string; displayUsername: string } | null
 	> = $state({});
 
-	// Track pending deletions to prevent rapid clicks
 	let pendingDeletions = $state(new Set<string>());
 
-	// Track the last processed form result to prevent duplicate toasts
-	let lastFormResult: any = $state(null);
+	let lastFormResult: ActionData | null = $state(null);
 
-	// Handle form responses with toast notifications
 	$effect(() => {
-		// Only process if form has changed and is different from last processed result
 		if (form && form !== lastFormResult) {
 			lastFormResult = form;
 
@@ -108,11 +101,9 @@
 		});
 	}
 
-	// Enhanced form submission with loading states for delete
 	function createEnhancedSubmit(actionName: string, runId?: string) {
-		return ({ formData, cancel }: { formData: FormData; cancel: () => void }) => {
+		return ({ cancel }: { formData: FormData; cancel: () => void }) => {
 			if (actionName === 'deleteRun' && runId) {
-				// Prevent duplicate deletions
 				if (pendingDeletions.has(runId)) {
 					cancel();
 					return;
@@ -120,14 +111,13 @@
 				pendingDeletions.add(runId);
 			}
 
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			return async ({ result, update }: { result: any; update: () => void }) => {
 				if (actionName === 'deleteRun' && runId) {
 					pendingDeletions.delete(runId);
 				}
 
-				// Handle the result directly here to avoid double-processing via $effect
 				if (result.type === 'success' && result.data) {
-					// Update lastFormResult to prevent $effect from processing this again
 					lastFormResult = result.data;
 
 					if (result.data.success) {
@@ -137,7 +127,6 @@
 					}
 				}
 
-				// Apply default behavior
 				await update();
 			};
 		};

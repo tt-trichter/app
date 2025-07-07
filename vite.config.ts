@@ -16,6 +16,11 @@ export default defineConfig({
 			}
 		})
 	],
+	server: {
+		watch: {
+			ignored: ['**/.direnv/**']
+		}
+	},
 	test: {
 		projects: [
 			{
