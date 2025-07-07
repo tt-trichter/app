@@ -40,7 +40,27 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          flavor: |
+            latest=true
           images: ${{ env.GHCR }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major.minor}}
+
+      - name: Create .env for docker build
+        run: |
+          echo "Creating .env file..."
+          cat <<EOF > .env
+          SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          PUBLIC_GOOGLE_CLIENT_ID=702596510444-k4j5n4vi5q0dkl3tomglpjgitkqcla71.apps.googleusercontent.com
+          EOF
 
       - name: Build and push Docker image
         id: push
