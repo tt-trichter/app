@@ -19,8 +19,8 @@
 	<div class="flex w-full flex-col items-center">
 		<div class="w-full flex-1">{@render children()}</div>
 	</div>
-	<div class="fixed bottom-5 left-1/2 -translate-x-1/2 transform">
-		<Dock {active} />
-	</div>
-	<ToastContainer />
+	<div class="fixed bottom-5 left-1/2 -translate-x-1/2 transform"></div>
 </div>
+
+<ToastContainer />
+<Dock {active} />
