@@ -5,13 +5,13 @@ import { user } from '$lib/server/db/schema/auth-schema';
 import { eq, desc, sql } from 'drizzle-orm';
 
 export async function saveRun(runDco: RunDco, userId?: string | null): Promise<RunWithUser> {
-	// Transform RunDco to RunDatabaseInsertObject
 	const runData: RunDatabseInsertObject = {
 		userId: userId || null,
+		image: runDco.image,
 		data: {
 			duration: runDco.duration,
 			rate: runDco.rate,
-			volume: runDco.volume
+			volume: runDco.volume,
 		}
 	};
 
@@ -23,7 +23,6 @@ export async function saveRun(runDco: RunDco, userId?: string | null): Promise<R
 
 	const newRun = created[0];
 
-	// If there's a userId, fetch the user data
 	if (newRun.userId) {
 		const userResult = await db
 			.select({
@@ -56,6 +55,7 @@ export async function getAllRunsWithUsers(): Promise<RunWithUser[]> {
 			id: runsTable.id,
 			userId: runsTable.userId,
 			data: runsTable.data,
+			image: runsTable.image,
 			createdAt: runsTable.createdAt,
 			user: {
 				id: user.id,

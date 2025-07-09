@@ -9,6 +9,9 @@
 	import type { PageData, ActionData } from './$types';
 	import UserAutocomplete from '$lib/components/UserAutocomplete.svelte';
 	import { toast } from '$lib/stores/toast.svelte.js';
+	import { PUBLIC_MINIO_BASE_URL, PUBLIC_MINIO_PORT } from '$env/static/public';
+
+	const imageBaseUrl = `http://${PUBLIC_MINIO_BASE_URL}:${PUBLIC_MINIO_PORT}`;
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -167,6 +170,7 @@
 					<tr>
 						<th></th>
 						<th>Name</th>
+						<th>Image(TMP)</th>
 						<th>Time</th>
 						<th>Amount</th>
 						<th>Flow Rate</th>
@@ -205,6 +209,13 @@
 										</form>
 									</td>
 								{/if}
+								<td>
+									<img
+										class="h-10 w-10 object-scale-down"
+										src="{imageBaseUrl}/{run.image}"
+										alt="Image of run {i}"
+									/>
+								</td>
 								<td>{run.data.duration}s</td>
 								<td>{run.data.volume.toFixed(2)}L</td>
 								<td>{run.data.rate.toFixed(2)}L/min</td>

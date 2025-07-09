@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import pino, { type LoggerOptions } from 'pino';
 import type { LokiOptions } from 'pino-loki';
 
-const defaultLogLevel: LoggerOptions['level'] = 'info';
+const defaultLogLevel: LoggerOptions['level'] = 'trace';
 
 export function createLogger() {
 	const options: LoggerOptions = {

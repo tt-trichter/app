@@ -13,5 +13,6 @@ export const runsTable = pgTable('runs', {
 		.notNull(),
 	createdAt: timestamp('created_at')
 		.$defaultFn(() => new Date())
-		.notNull()
+		.notNull(),
+	image: text().notNull()
 });

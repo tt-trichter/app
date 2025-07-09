@@ -16,7 +16,8 @@ export type RunWithUser = Run & {
 export const RunDcoSchema = z.object({
 	duration: z.number().positive('Duration must be a positive number'),
 	rate: z.number().positive('Rate must be a positive number'),
-	volume: z.number().positive('Volume must be a positive number')
+	volume: z.number().positive('Volume must be a positive number'),
+	image: z.string().nonempty("Image resource must not be empty")
 });
 
 export type RunDco = z.infer<typeof RunDcoSchema>;

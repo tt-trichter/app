@@ -21,6 +21,7 @@
           # Packages e.g. used in cli
           packages = with pkgs; [
             bun
+            minio-client
           ];
 
           # Dependencies used during runtime
