@@ -29,23 +29,8 @@
 	let loading = $state(false);
 	let inputElement: HTMLInputElement;
 	let suggestionsElement = $state<HTMLElement>();
-	let inputRect = $state<DOMRect | null>(null);
 
 	let debounceTimer: ReturnType<typeof setTimeout>;
-
-	// Update input position when suggestions are shown or loading
-	function updateInputRect(): void {
-		if (inputElement && (showSuggestions || loading)) {
-			inputRect = inputElement.getBoundingClientRect();
-		}
-	}
-
-	// Watch for changes that might affect positioning
-	$effect(() => {
-		if (showSuggestions || loading) {
-			updateInputRect();
-		}
-	});
 
 	function debounce(func: (query: string) => Promise<void>, delay: number) {
 		return (query: string) => {
@@ -166,23 +151,21 @@
 		/>
 	</div>
 
-	{#if (showSuggestions && inputRect) || (loading && inputRect)}
+	{#if showSuggestions || loading}
 		<div
 			bind:this={suggestionsElement}
-			class="bg-base-100 border-base-300 fixed z-[9999] max-h-48 overflow-y-auto rounded-lg border shadow-lg"
-			style="left: {inputRect?.left}px; top: {inputRect?.bottom +
-				window.scrollY}px; width: {inputRect?.width}px;"
+			class="border-base-300 bg-base-100 absolute top-full right-0 left-0 z-[9999] mt-1 max-h-48 overflow-y-auto rounded-lg border shadow-lg"
 		>
 			{#if loading}
 				<div class="flex items-center justify-center p-4">
 					<span class="loading loading-spinner loading-sm"></span>
 					<span class="ml-2 text-sm">Searching...</span>
 				</div>
-			{:else}
+			{:else if suggestions.length > 0}
 				{#each suggestions as user, index (user.id)}
 					<button
 						type="button"
-						class="hover:bg-base-200 border-base-200 w-full cursor-pointer border-b px-4 py-2 text-left last:border-b-0 {index ===
+						class="border-base-200 hover:bg-base-200 w-full cursor-pointer border-b px-4 py-2 text-left last:border-b-0 {index ===
 						selectedIndex
 							? 'bg-base-200'
 							: ''}"
@@ -196,6 +179,8 @@
 						</div>
 					</button>
 				{/each}
+			{:else}
+				<div class="text-base-content/60 p-4 text-center text-sm">No users found</div>
 			{/if}
 		</div>
 	{/if}

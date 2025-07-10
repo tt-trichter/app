@@ -25,9 +25,13 @@
 	});
 </script>
 
-<div class="flex w-full flex-col items-center justify-between align-middle">
-	<div class="mt-10 flex flex-col gap-1">
-		<h1 class="text-primary text-center text-4xl font-bold">Leaderboard</h1>
+<svelte:head>
+	<title>Trichter - Leaderboard</title>
+</svelte:head>
+
+<div class="flex w-full flex-col items-center">
+	<div class="w-full space-y-6 py-4 sm:py-8">
+		<h1 class="text-primary text-center text-3xl font-bold sm:text-4xl">Leaderboard</h1>
 
 		{#if runsStore.error}
 			<div class="alert alert-error">
