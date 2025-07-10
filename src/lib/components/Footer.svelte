@@ -1,22 +1,22 @@
 <footer class="footer sm:footer-horizontal bg-neutral text-neutral-content p-10">
 	<nav>
 		<h6 class="footer-title">Services</h6>
-		<a class="link link-hover">Branding</a>
-		<a class="link link-hover">Design</a>
-		<a class="link link-hover">Marketing</a>
-		<a class="link link-hover">Advertisement</a>
+		<a class="link link-hover" href="/">Branding</a>
+		<a class="link link-hover" href="/">Design</a>
+		<a class="link link-hover" href="/">Marketing</a>
+		<a class="link link-hover" href="/">Advertisement</a>
 	</nav>
 	<nav>
 		<h6 class="footer-title">Company</h6>
-		<a class="link link-hover">About us</a>
-		<a class="link link-hover">Contact</a>
-		<a class="link link-hover">Jobs</a>
-		<a class="link link-hover">Press kit</a>
+		<a class="link link-hover" href="/">About us</a>
+		<a class="link link-hover" href="/">Contact</a>
+		<a class="link link-hover" href="/">Jobs</a>
+		<a class="link link-hover" href="/">Press kit</a>
 	</nav>
 	<nav>
 		<h6 class="footer-title">Legal</h6>
-		<a class="link link-hover">Terms of use</a>
-		<a class="link link-hover">Privacy policy</a>
-		<a class="link link-hover">Cookie policy</a>
+		<a class="link link-hover" href="/">Terms of use</a>
+		<a class="link link-hover" href="/">Privacy policy</a>
+		<a class="link link-hover" href="/">Cookie policy</a>
 	</nav>
 </footer>

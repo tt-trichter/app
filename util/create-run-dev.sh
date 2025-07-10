@@ -11,7 +11,7 @@ image=$(xh POST http://localhost:5173/api/v1/images \
   Accept:text/plain \
   @/tmp/placehold.jpg)
 
-rm /tmp/placeholder.jpg
+rm /tmp/placehold.jpg
 
 rate=$(random_float 4 12 | awk '{printf "%.2f", $0 + 1}')
 duration=$(random_float 2 10 | awk '{printf "%.2f", $0 + 1}')

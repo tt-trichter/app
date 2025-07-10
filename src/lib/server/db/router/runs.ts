@@ -11,7 +11,7 @@ export async function saveRun(runDco: RunDco, userId?: string | null): Promise<R
 		data: {
 			duration: runDco.duration,
 			rate: runDco.rate,
-			volume: runDco.volume,
+			volume: runDco.volume
 		}
 	};
 

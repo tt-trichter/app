@@ -1,2 +1,2 @@
-docker build -t ghcr.io/definitelynotsimon13/trichter:latest .
-docker push ghcr.io/definitelynotsimon13/trichter:latest
+docker build -t ghcr.io/tt-trichter/app:main .
+docker push ghcr.io/tt-trichter/app:main

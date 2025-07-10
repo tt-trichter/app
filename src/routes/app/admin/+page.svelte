@@ -2,17 +2,40 @@
 	import { enhance } from '$app/forms';
 	import { Role } from '$lib/models/roles';
 	import type { PageData, ActionData } from './$types';
+	import type { ActionResult } from '@sveltejs/kit';
 	import { Plus, Edit, Trash2, Check, X } from 'lucide-svelte';
 	import { toast } from '$lib/stores/toast.svelte.js';
 	import type { User } from '$lib/models/user';
+	import Modal from '$lib/components/forms/Modal.svelte';
+	import FormField from '$lib/components/forms/FormField.svelte';
+	import LoadingButton from '$lib/components/forms/LoadingButton.svelte';
 
 	let { data, form: rawForm }: { data: PageData; form: ActionData } = $props();
 	let form = $state(rawForm);
 
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
-	let selectedUser: User | null = $state(null);
+	interface EditableUser {
+		id: string;
+		name: string;
+		email: string;
+		username: string;
+		displayUsername: string;
+		role: string | null;
+		banned: boolean | null;
+		banReason: string;
+		banExpires: string; // Always a string for form inputs
+	}
+
+	let selectedUser: EditableUser | null = $state(null);
 	let searchTerm = $state('');
+
+	// Remove unused createUserData since we're using form fields directly
+
+	const roleOptions = [
+		{ value: 'user', label: 'User' },
+		{ value: 'admin', label: 'Admin' }
+	];
 
 	let filteredUsers = $derived(
 		data.users.filter(
@@ -25,6 +48,7 @@
 	);
 
 	function openCreateModal() {
+		// Reset is handled by form elements themselves
 		showCreateModal = true;
 	}
 
@@ -32,8 +56,26 @@
 		showCreateModal = false;
 	}
 
-	function openEditModal(user: User) {
-		selectedUser = { ...user };
+	function openEditModal(user: PageData['users'][number]) {
+		selectedUser = {
+			id: user.id,
+			name: user.name,
+			email: user.email,
+			username: ('username' in user ? user.username : '') || '',
+			displayUsername:
+				('displayUsername' in user ? user.displayUsername : '') ||
+				('username' in user ? user.username : '') ||
+				'',
+			role: ('role' in user ? user.role : null) || null,
+			banned: ('banned' in user ? user.banned : null) || null,
+			banReason: ('banReason' in user ? user.banReason : '') || '',
+			banExpires:
+				'banExpires' in user && user.banExpires
+					? user.banExpires instanceof Date
+						? user.banExpires.toISOString().split('T')[0]
+						: new Date(user.banExpires).toISOString().split('T')[0]
+					: ''
+		};
 		showEditModal = true;
 	}
 
@@ -42,8 +84,11 @@
 		selectedUser = null;
 	}
 
-	function formatDate(date: string | Date) {
-		return new Date(date).toLocaleDateString('de-EN', {
+	/**
+	 * Format date with proper localization
+	 */
+	function formatDate(date: string | Date): string {
+		return new Date(date).toLocaleDateString('de-DE', {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric',
@@ -52,11 +97,17 @@
 		});
 	}
 
-	function getRoleBadgeClass(role: string | null | undefined) {
+	/**
+	 * Get CSS class for role badge based on role value
+	 */
+	function getRoleBadgeClass(role: string | null | undefined): string {
 		return role === Role.Admin ? 'badge-error' : 'badge-primary';
 	}
 
-	function getStatusBadgeClass(banned: boolean | null | undefined) {
+	/**
+	 * Get CSS class for status badge based on banned status
+	 */
+	function getStatusBadgeClass(banned: boolean | null | undefined): string {
 		return banned ? 'badge-warning' : 'badge-success';
 	}
 
@@ -108,8 +159,7 @@
 					loadingToastId = toast.loading('Processing...');
 			}
 
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			return async ({ result, update }: { result: any; update: () => void }) => {
+			return async ({ result, update }: { result: ActionResult; update: () => void }) => {
 				pendingSubmissions.delete(submissionKey);
 
 				if (loadingToastId) {
@@ -117,15 +167,15 @@
 				}
 
 				if (result.type === 'success' && result.data) {
-					const resultData = { ...result.data };
+					const resultData = result.data as ActionData;
 					lastFormResult = resultData;
 
-					if (resultData.success) {
+					if (resultData?.success) {
 						toast.success(resultData.message || 'Operation completed successfully');
 						showCreateModal = false;
 						showEditModal = false;
 						selectedUser = null;
-					} else if (resultData.error) {
+					} else if (resultData?.error) {
 						toast.error(resultData.error);
 					}
 				}
@@ -249,22 +299,20 @@
 											>
 												<input type="hidden" name="userId" value={user.id} />
 												<input type="hidden" name="emailVerified" value={!user.emailVerified} />
-												<button
+												<LoadingButton
 													type="submit"
-													class="btn btn-ghost btn-sm {user.emailVerified
+													class="btn-ghost btn-sm {user.emailVerified
 														? 'text-warning'
 														: 'text-success'}"
 													title={user.emailVerified ? 'Mark as unverified' : 'Mark as verified'}
-													disabled={pendingSubmissions.has(`toggleEmailVerification-${user.id}`)}
+													loading={pendingSubmissions.has(`toggleEmailVerification-${user.id}`)}
 												>
-													{#if pendingSubmissions.has(`toggleEmailVerification-${user.id}`)}
-														<span class="loading loading-spinner loading-xs"></span>
-													{:else if user.emailVerified}
+													{#if user.emailVerified}
 														<X size={16} />
 													{:else}
 														<Check size={16} />
 													{/if}
-												</button>
+												</LoadingButton>
 											</form>
 											<button
 												class="btn btn-ghost btn-sm"
@@ -279,23 +327,19 @@
 												use:enhance={createEnhancedSubmit('deleteUser')}
 											>
 												<input type="hidden" name="userId" value={user.id} />
-												<button
+												<LoadingButton
 													type="submit"
-													class="btn btn-ghost btn-sm text-error"
+													class="btn-ghost btn-sm text-error"
 													title="Delete user"
-													disabled={pendingSubmissions.has(`deleteUser-${user.id}`)}
+													loading={pendingSubmissions.has(`deleteUser-${user.id}`)}
 													onclick={(e) => {
 														if (!confirm('Are you sure you want to delete this user?')) {
-															e.preventDefault();
+															e?.preventDefault();
 														}
 													}}
 												>
-													{#if pendingSubmissions.has(`deleteUser-${user.id}`)}
-														<span class="loading loading-spinner loading-xs"></span>
-													{:else}
-														<Trash2 size={16} />
-													{/if}
-												</button>
+													<Trash2 size={16} />
+												</LoadingButton>
 											</form>
 										</div>
 									</td>
@@ -315,226 +359,167 @@
 </div>
 
 <!-- Create User Modal -->
-<dialog class="modal" class:modal-open={showCreateModal}>
-	<div class="modal-box w-11/12 max-w-2xl">
-		<form method="dialog">
-			<button
-				class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2"
-				onclick={closeCreateModal}>✕</button
+<Modal isOpen={showCreateModal} onClose={closeCreateModal} title="Create New User" size="large">
+	<form
+		method="POST"
+		action="?/createUser"
+		use:enhance={createEnhancedSubmit('createUser')}
+		class="space-y-4"
+	>
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+			<FormField
+				id="create-name"
+				name="name"
+				label="Full Name"
+				type="text"
+				placeholder="John Doe"
+				required
+			/>
+
+			<FormField
+				id="create-email"
+				name="email"
+				label="Email"
+				type="email"
+				placeholder="john@example.com"
+				required
+			/>
+
+			<FormField
+				id="create-username"
+				name="username"
+				label="Username"
+				type="text"
+				placeholder="johndoe"
+				required
+			/>
+
+			<FormField
+				id="create-role"
+				name="role"
+				label="Role"
+				type="select"
+				options={roleOptions}
+				required
+			/>
+
+			<FormField
+				id="create-password"
+				name="password"
+				label="Password"
+				type="password"
+				placeholder="••••••••"
+				required
+			/>
+		</div>
+
+		<div class="modal-action">
+			<button type="button" class="btn" onclick={closeCreateModal}>Cancel</button>
+			<LoadingButton
+				type="submit"
+				class="btn-primary"
+				loading={pendingSubmissions.has('createUser-new')}
 			>
-		</form>
-		<h3 class="mb-4 text-lg font-bold">Create New User</h3>
-
-		<form
-			method="POST"
-			action="?/createUser"
-			use:enhance={createEnhancedSubmit('createUser')}
-			class="space-y-4"
-		>
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<div class="form-control">
-					<label class="label" for="create-name">
-						<span class="label-text">Full Name</span>
-					</label>
-					<input
-						id="create-name"
-						name="name"
-						type="text"
-						placeholder="John Doe"
-						class="input input-bordered"
-						required
-					/>
-				</div>
-
-				<div class="form-control">
-					<label class="label" for="create-email">
-						<span class="label-text">Email</span>
-					</label>
-					<input
-						id="create-email"
-						name="email"
-						type="email"
-						placeholder="john@example.com"
-						class="input input-bordered"
-						required
-					/>
-				</div>
-
-				<div class="form-control">
-					<label class="label" for="create-username">
-						<span class="label-text">Username</span>
-					</label>
-					<input
-						id="create-username"
-						name="username"
-						type="text"
-						placeholder="johndoe"
-						class="input input-bordered"
-						required
-					/>
-				</div>
-
-				<div class="form-control">
-					<label class="label" for="create-role">
-						<span class="label-text">Role</span>
-					</label>
-					<select id="create-role" name="role" class="select select-bordered" required>
-						<option value="user">User</option>
-						<option value="admin">Admin</option>
-					</select>
-				</div>
-
-				<div class="form-control">
-					<label class="label" for="create-password">
-						<span class="label-text">Password</span>
-					</label>
-					<input
-						id="create-password"
-						name="password"
-						type="password"
-						placeholder="••••••••"
-						class="input input-bordered"
-						required
-					/>
-				</div>
-				<div class="modal-action">
-					<button type="button" class="btn" onclick={closeCreateModal}>Cancel</button>
-					<button type="submit" class="btn btn-primary">Create User</button>
-				</div>
-			</div>
-		</form>
-	</div>
-</dialog>
+				Create User
+			</LoadingButton>
+		</div>
+	</form>
+</Modal>
 
 <!-- Edit User Modal -->
-<dialog class="modal" class:modal-open={showEditModal}>
-	<div class="modal-box w-11/12 max-w-2xl">
-		<form method="dialog">
-			<button
-				class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2"
-				onclick={closeEditModal}>✕</button
-			>
+<Modal isOpen={showEditModal} onClose={closeEditModal} title="Edit User" size="large">
+	{#if selectedUser}
+		<form
+			method="POST"
+			action="?/updateUser"
+			use:enhance={createEnhancedSubmit('updateUser')}
+			class="space-y-4"
+		>
+			<input type="hidden" name="id" value={selectedUser.id} />
+
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<FormField
+					id="edit-name"
+					name="name"
+					label="Full Name"
+					type="text"
+					bind:value={selectedUser.name}
+					required
+				/>
+
+				<FormField
+					id="edit-email"
+					name="email"
+					label="Email"
+					type="email"
+					bind:value={selectedUser.email}
+					required
+				/>
+
+				<FormField
+					id="edit-username"
+					name="username"
+					label="Username"
+					type="text"
+					bind:value={selectedUser.username}
+					helpText="Username normalization is handled by better-auth"
+					required
+				/>
+
+				<FormField
+					id="edit-role"
+					name="role"
+					label="Role"
+					type="select"
+					options={roleOptions}
+					value={selectedUser.role || 'user'}
+					required
+				/>
+
+				<div class="form-control md:col-span-2">
+					<label class="label cursor-pointer">
+						<span class="label-text">Banned</span>
+						<input
+							type="checkbox"
+							name="banned"
+							bind:checked={selectedUser.banned}
+							class="toggle toggle-error"
+						/>
+					</label>
+				</div>
+
+				{#if selectedUser.banned}
+					<FormField
+						id="edit-ban-reason"
+						name="banReason"
+						label="Ban Reason"
+						type="text"
+						value={selectedUser.banReason || ''}
+						placeholder="Reason for ban"
+						class="md:col-span-2"
+					/>
+
+					<FormField
+						id="edit-ban-expires"
+						name="banExpires"
+						label="Ban Expires (optional)"
+						type="date"
+						value={selectedUser.banExpires || ''}
+						class="md:col-span-2"
+					/>
+				{/if}
+			</div>
+
+			<div class="modal-action">
+				<button type="button" class="btn" onclick={closeEditModal}>Cancel</button>
+				<LoadingButton
+					type="submit"
+					class="btn-primary"
+					loading={pendingSubmissions.has(`updateUser-${selectedUser.id}`)}
+				>
+					Update User
+				</LoadingButton>
+			</div>
 		</form>
-		<h3 class="mb-4 text-lg font-bold">Edit User</h3>
-
-		{#if selectedUser}
-			<form
-				method="POST"
-				action="?/updateUser"
-				use:enhance={createEnhancedSubmit('updateUser')}
-				class="space-y-4"
-			>
-				<input type="hidden" name="id" value={selectedUser.id} />
-
-				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-					<div class="form-control">
-						<label class="label" for="edit-name">
-							<span class="label-text">Full Name</span>
-						</label>
-						<input
-							id="edit-name"
-							name="name"
-							type="text"
-							bind:value={selectedUser.name}
-							class="input input-bordered"
-							required
-						/>
-					</div>
-
-					<div class="form-control">
-						<label class="label" for="edit-email">
-							<span class="label-text">Email</span>
-						</label>
-						<input
-							id="edit-email"
-							name="email"
-							type="email"
-							bind:value={selectedUser.email}
-							class="input input-bordered"
-							required
-						/>
-					</div>
-
-					<div class="form-control">
-						<label class="label" for="edit-username">
-							<span class="label-text">Username</span>
-						</label>
-						<input
-							id="edit-username"
-							name="username"
-							type="text"
-							bind:value={selectedUser.username}
-							class="input input-bordered"
-							required
-						/>
-						<div class="label">
-							<span class="label-text-alt">Username normalization is handled by better-auth</span>
-						</div>
-					</div>
-
-					<div class="form-control">
-						<label class="label" for="edit-role">
-							<span class="label-text">Role</span>
-						</label>
-						<select
-							id="edit-role"
-							name="role"
-							bind:value={selectedUser.role}
-							class="select select-bordered"
-							required
-						>
-							<option value="user">User</option>
-							<option value="admin">Admin</option>
-						</select>
-					</div>
-
-					<div class="form-control md:col-span-2">
-						<label class="label cursor-pointer">
-							<span class="label-text">Banned</span>
-							<input
-								type="checkbox"
-								name="banned"
-								bind:checked={selectedUser.banned}
-								class="toggle toggle-error"
-							/>
-						</label>
-					</div>
-
-					{#if selectedUser.banned}
-						<div class="form-control md:col-span-2">
-							<label class="label" for="edit-ban-reason">
-								<span class="label-text">Ban Reason</span>
-							</label>
-							<input
-								id="edit-ban-reason"
-								name="banReason"
-								type="text"
-								bind:value={selectedUser.banReason}
-								placeholder="Reason for ban"
-								class="input input-bordered"
-							/>
-						</div>
-
-						<div class="form-control md:col-span-2">
-							<label class="label" for="edit-ban-expires">
-								<span class="label-text">Ban Expires (optional)</span>
-							</label>
-							<input
-								id="edit-ban-expires"
-								name="banExpires"
-								type="date"
-								bind:value={selectedUser.banExpires}
-								class="input input-bordered"
-							/>
-						</div>
-					{/if}
-				</div>
-
-				<div class="modal-action">
-					<button type="button" class="btn" onclick={closeEditModal}>Cancel</button>
-					<button type="submit" class="btn btn-primary">Update User</button>
-				</div>
-			</form>
-		{/if}
-	</div>
-</dialog>
+	{/if}
+</Modal>

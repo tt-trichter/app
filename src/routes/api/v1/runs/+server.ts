@@ -1,14 +1,13 @@
 import { logger } from '$lib/logger';
-import { ServerEvent } from '$lib/models/events';
+import { ServerEvent, resultEmitter } from '$lib/server/events';
 import { getAllRunsWithUsers, saveRun } from '$lib/server/db/router/runs';
-import { resultEmitter } from '$lib/server/events';
 import { RunDcoSchema } from '$lib/models/run';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { requireBasicAuth } from '$lib/server/auth';
 
 export const GET: RequestHandler = async ({ request }) => {
-	logger.info({ request }, "All runs requested");
+	logger.info({ request }, 'All runs requested');
 	const runs = await getAllRunsWithUsers();
 	return new Response(JSON.stringify(runs), {
 		headers: { 'Content-Type': 'application/json' }
@@ -16,7 +15,7 @@ export const GET: RequestHandler = async ({ request }) => {
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-	logger.info({ request }, "Create run requested")
+	logger.info({ request }, 'Create run requested');
 	const { unauthorized, response } = requireBasicAuth(request);
 	if (unauthorized) return response;
 
@@ -28,7 +27,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const createdRun = await saveRun(validatedData, null); // No user assigned initially
 		logger.info({ run: createdRun }, 'Created new run');
 
-		resultEmitter.emit(ServerEvent.RunCreated, createdRun);
+		resultEmitter.safeEmit(ServerEvent.RunCreated, createdRun);
 
 		return new Response(JSON.stringify({ success: true }), {
 			headers: { 'Content-Type': 'application/json' }
@@ -49,7 +48,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		logger.error({ error }, "Failed to create run");
+		logger.error({ error }, 'Failed to create run');
 		return new Response(JSON.stringify({ success: false, error: 'Internal server error' }), {
 			status: 500,
 			headers: { 'Content-Type': 'application/json' }

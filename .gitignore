@@ -26,3 +26,5 @@ vite.config.ts.timestamp-*
 .env.sentry-build-plugin
 
 .direnv
+
+static/uploads

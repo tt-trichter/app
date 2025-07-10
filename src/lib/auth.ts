@@ -8,6 +8,16 @@ import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
 import * as auth_schema from '$lib/server/db/schema/auth-schema';
 import { logger } from './logger';
 
+// Define interface for user creation hook
+interface UserCreationHookData {
+	id?: string;
+	name?: string;
+	email?: string;
+	username?: string;
+	displayUsername?: string;
+	[key: string]: unknown;
+}
+
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: 'pg',
@@ -29,11 +39,12 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				before: async (user: any) => {
+				before: async (user) => {
 					logger.info('Creating user:', user);
-					if (!user.username && user.name) {
-						let generatedUsername = user.name
+					const userData = user as UserCreationHookData;
+
+					if (!userData.username && userData.name) {
+						let generatedUsername = userData.name
 							.toLowerCase()
 							.replace(/[^a-z0-9]/g, '-')
 							.replace(/-+/g, '-')
@@ -46,13 +57,24 @@ export const auth = betterAuth({
 						const timestamp = Date.now().toString().slice(-4);
 						const finalUsername = `${generatedUsername}-${timestamp}`;
 
-						user.username = finalUsername;
-						user.displayUsername = user.name;
-					} else if (user.username && !user.displayUsername) {
-						user.displayUsername = user.username;
+						return {
+							data: {
+								...user,
+								username: finalUsername,
+								displayUsername: userData.name
+							}
+						};
+					} else if (userData.username && !userData.displayUsername) {
+						return {
+							data: {
+								...user,
+								displayUsername: userData.username
+							}
+						};
 					}
 
-					return user;
+					// Return void to use the original user data
+					return;
 				}
 			}
 		}

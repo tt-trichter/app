@@ -34,7 +34,7 @@
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	// Update input position when suggestions are shown or loading
-	function updateInputRect() {
+	function updateInputRect(): void {
 		if (inputElement && (showSuggestions || loading)) {
 			inputRect = inputElement.getBoundingClientRect();
 		}
@@ -67,24 +67,29 @@
 				`/api/v1/users/search?name=${encodeURIComponent(query)}&limit=5`
 			);
 			if (response.ok) {
-				suggestions = await response.json();
+				const data: User[] = await response.json();
+				suggestions = data;
 				logger.info('Fetched users:', suggestions);
 				showSuggestions = suggestions.length > 0;
 				selectedIndex = -1;
+			} else {
+				logger.warn('Failed to fetch users:', response.status);
+				suggestions = [];
+				showSuggestions = false;
 			}
 		} catch (error) {
-			console.error('Error fetching users:', error);
+			logger.error('Error fetching users:', error);
 			suggestions = [];
 			showSuggestions = false;
 		}
 		loading = false;
 	}, 300);
 
-	function handleInput() {
+	function handleInput(): void {
 		debouncedSearch(inputValue);
 	}
 
-	function handleKeydown(event: KeyboardEvent) {
+	function handleKeydown(event: KeyboardEvent): void {
 		if (!showSuggestions) return;
 
 		switch (event.key) {
@@ -112,14 +117,14 @@
 		}
 	}
 
-	function selectUser(user: User) {
+	function selectUser(user: User): void {
 		inputValue = user.displayUsername;
 		showSuggestions = false;
 		selectedIndex = -1;
 		onSelect(user);
 	}
 
-	function scrollToSelected() {
+	function scrollToSelected(): void {
 		if (selectedIndex >= 0 && suggestionsElement) {
 			const selectedElement = suggestionsElement.children[selectedIndex] as HTMLElement;
 			if (selectedElement) {
@@ -128,7 +133,7 @@
 		}
 	}
 
-	function handleBlur() {
+	function handleBlur(): void {
 		// Delay hiding suggestions to allow for click events
 		setTimeout(() => {
 			showSuggestions = false;
@@ -136,7 +141,7 @@
 		}, 200);
 	}
 
-	function handleFocus() {
+	function handleFocus(): void {
 		if (inputValue.length >= 2 && suggestions.length > 0) {
 			showSuggestions = true;
 		}

@@ -53,6 +53,8 @@
 		"vitest-browser-svelte": "^0.1.0"
 	},
 	"dependencies": {
+		"@azure/identity": "^4.10.2",
+		"@azure/storage-blob": "^12.27.0",
 		"@lucide/svelte": "^0.525.0",
 		"@sentry/sveltekit": "^9",
 		"@types/bcrypt": "^5.0.2",

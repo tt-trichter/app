@@ -1,9 +1,12 @@
 import { logger } from '$lib/logger';
 import type { RequestHandler } from './$types';
-import { MINIO_BUCKET_NAME } from '$env/static/private';
-import { minioClient } from '$lib/server/minio';
+import { imageStorage } from '$lib/server/storage';
 import { requireBasicAuth } from '$lib/server/auth';
-import { internalServerErrorReponse, successResponse, unsupportedMediaTypeResponse } from '$lib/response-helper';
+import {
+	internalServerErrorResponse,
+	successResponse,
+	unsupportedMediaTypeResponse
+} from '$lib/response-helper';
 
 function createImageId() {
 	return crypto.randomUUID();
@@ -25,29 +28,24 @@ export const POST: RequestHandler = async ({ request }) => {
 	const imageBuffer = Buffer.from(await request.arrayBuffer());
 
 	const imageId = createImageId();
-	const objectName = `${imageId}.jpg`;
-	const resourcePath = `${MINIO_BUCKET_NAME}/${objectName}`;
 
 	try {
-		const uploadInfo = await minioClient.putObject(MINIO_BUCKET_NAME, objectName, imageBuffer);
-		logger.info({ upload_info: uploadInfo }, 'Successfully uploaded image');
+		const resourcePath = await imageStorage.uploadImage(imageId, imageBuffer, contentType);
+		logger.info({ imageId, resourcePath }, 'Successfully uploaded image');
 
 		if (acceptHeader.includes('text/plain')) {
 			return new Response(resourcePath, {
 				status: 200,
 				headers: { 'Content-Type': 'text/plain' }
-			})
+			});
 		} else {
-
 			return successResponse({
 				resource: resourcePath
-			})
+			});
 		}
 	} catch (e) {
+		console.error(e);
 		logger.error({ error: e, request }, 'Failed to upload image');
-		return internalServerErrorReponse('Failed to upload image');
-
+		return internalServerErrorResponse('Failed to upload image');
 	}
-
 };
-

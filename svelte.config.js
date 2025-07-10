@@ -6,6 +6,17 @@ const config = {
 	// Consult https://svelte.dev/docs/kit/integrations
 	// for more information about preprocessors
 	preprocess: vitePreprocess(),
+	compilerOptions: {
+		runes: true
+	},
+	vitePlugin: {
+		dynamicCompileOptions({ filename }) {
+			// Disable runes for lucide-svelte icons
+			if (filename.includes('node_modules/lucide-svelte')) {
+				return { runes: false };
+			}
+		}
+	},
 
 	kit: {
 		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.

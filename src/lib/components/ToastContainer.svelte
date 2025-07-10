@@ -49,7 +49,8 @@
 					{#if toast.type === 'loading'}
 						<Loader2 size={20} class="animate-spin" />
 					{:else}
-						<svelte:component this={getToastIcon(toast.type)} size={20} />
+						{@const IconComponent = getToastIcon(toast.type)}
+						<IconComponent size={20} />
 					{/if}
 					<span class="text-sm">{toast.message}</span>
 				</div>
