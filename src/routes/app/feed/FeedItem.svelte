@@ -13,7 +13,7 @@
 	} = $props();
 </script>
 
-<div class="card bg-base-100 m-4 w-xs shadow-sm">
+<div class="card bg-base-100 m-4 max-w-sm shadow-sm">
 	<figure>
 		{#if isLoading}
 			<div class="skeleton h-48 w-full"></div>
@@ -31,7 +31,7 @@
 		{#if isLoading}
 			<div class="skeleton mb-4 h-4 w-full"></div>
 		{:else}
-			<p>{run.data.rate}L/min at {formatDate(run.createdAt)}</p>
+			<p>{run.data.rate.toFixed(2)}L/min at {formatDate(run.createdAt)}</p>
 		{/if}
 
 		<div class="card-actions items-center justify-end">

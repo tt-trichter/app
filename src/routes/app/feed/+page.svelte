@@ -28,7 +28,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="max-w-vw flex flex-wrap justify-center">
+	<div class="max-w-vw flex flex-col justify-center">
 		{#each displayRuns as run (run.id)}
 			<FeedItem {run} isLoading={runsStore.isLoading} />
 		{/each}
