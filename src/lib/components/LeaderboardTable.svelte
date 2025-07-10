@@ -53,13 +53,15 @@
 	} = $props();
 </script>
 
-<div class="w-full">
+<div>
 	<!-- Mobile View -->
 	<div class="block lg:hidden">
 		<div class="space-y-4">
 			{#if runs && runs.length > 0}
 				{#each runs as run, i (run.id)}
-					<div class="card bg-base-100 border-base-300 border shadow-sm">
+					<div
+						class="card bg-base-100 border-base-300 mx-auto w-9/10 max-w-sm border shadow-sm md:max-w-sm"
+					>
 						<div class="card-body p-4">
 							<div class="mb-3 flex items-center justify-between">
 								<div class="badge badge-primary badge-lg">#{i + 1}</div>

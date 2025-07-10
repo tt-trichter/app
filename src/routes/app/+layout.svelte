@@ -22,9 +22,9 @@
 	<link rel="icon" href="/favicon.ico" />
 </svelte:head>
 
-<div class="relative min-h-screen pb-20">
+<div class="relative min-h-screen min-w-screen pb-20">
 	<div class="flex w-full flex-col items-center px-4 sm:px-6 lg:px-8">
-		<div class="w-full max-w-7xl flex-1">{@render children()}</div>
+		<div class="w-full flex-1">{@render children()}</div>
 	</div>
 </div>
 

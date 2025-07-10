@@ -9,7 +9,7 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
-<div class="container mx-auto max-w-4xl p-4">
+<div class="container mx-auto mt-2 w-full max-w-2xl p-4">
 	<ProfileHeader user={data.user} title="Trichter - Profile" />
 
 	<ProfileInfoCards user={data.user} isOwnProfile={true} />

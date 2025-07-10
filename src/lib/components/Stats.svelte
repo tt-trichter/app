@@ -10,7 +10,7 @@
 	let { totalRuns, quickestRun, isLoading }: Props = $props();
 </script>
 
-<div class="stats shadow">
+<div class="stats mx-auto w-full shadow">
 	<div class="stat">
 		<div class="stat-title">Total Runs</div>
 		{#if isLoading}

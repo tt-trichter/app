@@ -21,7 +21,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="card bg-base-100 m-4 max-w-sm shadow-sm">
+	<div class="card bg-base-100 m-4 mx-auto w-9/10 max-w-md shadow-sm">
 		<figure>
 			<img src={getImageUrl(run.image)} alt="Run image {run.id}" />
 		</figure>
