@@ -108,3 +108,42 @@ export async function deleteRun(runId: string): Promise<boolean> {
 
 	return deleted.length > 0;
 }
+
+export interface UserStats {
+	personalBest: number;
+	totalLiters: number;
+	averageRate: number;
+	totalRuns: number;
+}
+
+export async function getUserStats(userId: string): Promise<UserStats> {
+	const userRuns = await db
+		.select({
+			data: runsTable.data
+		})
+		.from(runsTable)
+		.where(eq(runsTable.userId, userId));
+
+	if (userRuns.length === 0) {
+		return {
+			personalBest: 0,
+			totalLiters: 0,
+			averageRate: 0,
+			totalRuns: 0
+		};
+	}
+
+	const rates = userRuns.map(run => run.data.rate);
+	const volumes = userRuns.map(run => run.data.volume);
+
+	const personalBest = Math.max(...rates);
+	const totalLiters = volumes.reduce((sum, volume) => sum + volume, 0);
+	const averageRate = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+
+	return {
+		personalBest: Math.round(personalBest * 100) / 100,
+		totalLiters: Math.round(totalLiters * 100) / 100,
+		averageRate: Math.round(averageRate * 100) / 100,
+		totalRuns: userRuns.length
+	};
+}

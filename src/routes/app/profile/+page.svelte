@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { PageProps } from './$types';
-	import { User, Settings, LogOut, Mail, Calendar, Shield } from 'lucide-svelte';
+	import type { PageData } from './$types';
+	import { User, Settings, LogOut, Mail, Calendar, Shield, TrendingUp } from 'lucide-svelte';
 
-	let { data }: PageProps = $props();
+	let { data }: { data: PageData } = $props();
 
 	const formatDate = (date: string | Date) => {
 		return new Intl.DateTimeFormat('en-US', {
@@ -10,6 +10,10 @@
 			month: 'long',
 			day: 'numeric'
 		}).format(new Date(date));
+	};
+
+	const formatNumber = (num: number) => {
+		return num > 0 ? num.toFixed(2) : '--';
 	};
 </script>
 
@@ -95,24 +99,24 @@
 		<div class="card bg-base-100 shadow-lg md:col-span-2">
 			<div class="card-body">
 				<h2 class="card-title">
-					<User size={20} />
+					<TrendingUp size={20} />
 					Statistics
 				</h2>
 				<div class="stats stats-vertical sm:stats-horizontal bg-base-200 w-full">
 					<div class="stat">
 						<div class="stat-title">Personal Best</div>
-						<div class="stat-value text-primary">--</div>
-						<div class="stat-desc">Coming soon</div>
+						<div class="stat-value text-primary">{formatNumber(data.stats.personalBest)}</div>
+						<div class="stat-desc">{data.stats.personalBest > 0 ? 'L/min' : 'No runs yet'}</div>
 					</div>
 					<div class="stat">
-						<div class="stat-title">Total Sessions</div>
-						<div class="stat-value text-secondary">--</div>
-						<div class="stat-desc">Coming soon</div>
+						<div class="stat-title">Total Liters</div>
+						<div class="stat-value text-secondary">{formatNumber(data.stats.totalLiters)}</div>
+						<div class="stat-desc">{data.stats.totalRuns} total runs</div>
 					</div>
 					<div class="stat">
-						<div class="stat-title">Average Score</div>
-						<div class="stat-value text-accent">--</div>
-						<div class="stat-desc">Coming soon</div>
+						<div class="stat-title">Average Rate</div>
+						<div class="stat-value text-accent">{formatNumber(data.stats.averageRate)}</div>
+						<div class="stat-desc">{data.stats.averageRate > 0 ? 'L/min' : 'No data'}</div>
 					</div>
 				</div>
 			</div>
