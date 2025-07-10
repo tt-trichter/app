@@ -27,7 +27,8 @@ export async function saveRun(runDco: RunDco, userId?: string | null): Promise<R
 		const userResult = await db
 			.select({
 				id: user.id,
-				name: user.name
+				name: user.name,
+				username: user.username
 			})
 			.from(user)
 			.where(eq(user.id, newRun.userId))
@@ -59,7 +60,8 @@ export async function getAllRunsWithUsers(): Promise<RunWithUser[]> {
 			createdAt: runsTable.createdAt,
 			user: {
 				id: user.id,
-				name: user.name
+				name: user.name,
+				username: user.username
 			}
 		})
 		.from(runsTable)
@@ -91,7 +93,8 @@ export async function updateRunWithUser(
 	const userResult = await db
 		.select({
 			id: user.id,
-			name: user.name
+			name: user.name,
+			username: user.username
 		})
 		.from(user)
 		.where(eq(user.id, userId))
@@ -133,8 +136,8 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 		};
 	}
 
-	const rates = userRuns.map(run => run.data.rate);
-	const volumes = userRuns.map(run => run.data.volume);
+	const rates = userRuns.map((run) => run.data.rate);
+	const volumes = userRuns.map((run) => run.data.volume);
 
 	const personalBest = Math.max(...rates);
 	const totalLiters = volumes.reduce((sum, volume) => sum + volume, 0);
@@ -146,4 +149,21 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 		averageRate: Math.round(averageRate * 100) / 100,
 		totalRuns: userRuns.length
 	};
+}
+
+export async function getRecentRunsForUser(userId: string, limit: number = 3): Promise<Run[]> {
+	const runs = await db
+		.select({
+			id: runsTable.id,
+			userId: runsTable.userId,
+			data: runsTable.data,
+			image: runsTable.image,
+			createdAt: runsTable.createdAt
+		})
+		.from(runsTable)
+		.where(eq(runsTable.userId, userId))
+		.orderBy(desc(runsTable.createdAt))
+		.limit(limit);
+
+	return runs;
 }

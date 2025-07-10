@@ -3,6 +3,7 @@
 	import type { RunWithUser } from '$lib/models/run';
 	import { formatDate } from '$lib/utils/date.js';
 	import { getImageUrl } from '$lib/utils/image.js';
+	import { Clock, Droplet, Gauge } from 'lucide-svelte';
 
 	let {
 		run,
@@ -13,40 +14,54 @@
 	} = $props();
 </script>
 
-<div class="card bg-base-100 m-4 max-w-sm shadow-sm">
-	<figure>
-		{#if isLoading}
-			<div class="skeleton h-48 w-full"></div>
-		{:else}
-			<img src={getImageUrl(run.image)} alt="Run image {run.id}" />
-		{/if}
-	</figure>
-	<div class="card-body">
-		{#if isLoading}
-			<div class="skeleton mb-2 h-6 w-3/4"></div>
-		{:else}
-			<h2 class="card-title">{run.data.volume.toFixed(2)}L in {run.data.duration.toFixed(2)}s!</h2>
-		{/if}
-
-		{#if isLoading}
-			<div class="skeleton mb-4 h-4 w-full"></div>
-		{:else}
-			<p>{run.data.rate.toFixed(2)}L/min at {formatDate(run.createdAt)}</p>
-		{/if}
-
-		<div class="card-actions items-center justify-end">
-			{#if isLoading}
-				<div class="skeleton h-4 w-20"></div>
-				<div class="skeleton h-8 w-20 rounded-md"></div>
-			{:else}
-				<p class="text-gray-500">By {run.user?.name ?? 'Unknown'}</p>
-				{#if !run.user}
-					<form action="?/claimRun" method="POST" use:enhance>
-						<input type="hidden" name="id" value={run.id} />
-						<button class="btn btn-success" type="submit">Claim Run</button>
-					</form>
-				{/if}
-			{/if}
+{#if isLoading}
+	<div class="card bg-base-100 min-h-sm my-3 min-w-2xs shadow-sm">
+		<div class="flex h-full w-full justify-center py-5">
+			<div class="loading loading-spinner loading-lg"></div>
 		</div>
 	</div>
-</div>
+{:else}
+	<div class="card bg-base-100 m-4 max-w-sm shadow-sm">
+		<figure>
+			<img src={getImageUrl(run.image)} alt="Run image {run.id}" />
+		</figure>
+		<div class="card-body p-4">
+			<div class="flex items-center justify-between">
+				<div class="text-primary flex items-center gap-1">
+					<Gauge size={14} />
+					<span class="text-sm font-medium">Rate</span>
+				</div>
+				<span class="font-mono text-sm">{run.data.rate.toFixed(2)} L/min</span>
+			</div>
+			<div class="flex items-center justify-between">
+				<div class="text-secondary flex items-center gap-1">
+					<Droplet size={14} />
+					<span class="text-sm font-medium">Volume</span>
+				</div>
+				<span class="font-mono text-sm">{run.data.volume.toFixed(2)} L</span>
+			</div>
+			<div class="flex items-center justify-between">
+				<div class="text-accent flex items-center gap-1">
+					<Clock size={14} />
+					<span class="text-sm font-medium">Duration</span>
+				</div>
+				<span class="font-mono text-sm">{run.data.duration.toFixed(2)} sec</span>
+			</div>
+		</div>
+		<div class="divider mt-0 mb-1"></div>
+		<div class="text-base-content/70 flex justify-between px-4 pb-3 text-center text-xs">
+			{#if run.user}
+				<a class="text-primary" href="/app/profile/{run.user.username}"
+					>{run.user.name || run.user.username}</a
+				>
+			{:else}
+				<form action="?/claimRun" method="POST" use:enhance>
+					<input type="hidden" name="id" value={run.id} />
+					<button class="link text-info">Claim run</button>
+				</form>
+			{/if}
+
+			<span>{formatDate(run.createdAt)}</span>
+		</div>
+	</div>
+{/if}

@@ -15,11 +15,17 @@
 	});
 </script>
 
-<div class="relative min-h-screen pt-5 pb-20">
-	<div class="flex w-full flex-col items-center">
-		<div class="w-full flex-1">{@render children()}</div>
+<svelte:head>
+	<title>Trichter - App</title>
+	<meta name="description" content="Trichter app for tracking and sharing your runs." />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="icon" href="/favicon.ico" />
+</svelte:head>
+
+<div class="relative min-h-screen pb-20">
+	<div class="flex w-full flex-col items-center px-4 sm:px-6 lg:px-8">
+		<div class="w-full max-w-7xl flex-1">{@render children()}</div>
 	</div>
-	<div class="fixed bottom-5 left-1/2 -translate-x-1/2 transform"></div>
 </div>
 
 <ToastContainer />

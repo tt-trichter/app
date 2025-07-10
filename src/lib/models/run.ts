@@ -9,6 +9,7 @@ export type RunWithUser = Run & {
 	user?: {
 		id: string;
 		name: string;
+		username: string;
 	} | null;
 };
 

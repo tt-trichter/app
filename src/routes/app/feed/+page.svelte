@@ -20,6 +20,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Trichter - Feed</title>
+</svelte:head>
+
 {#if runsStore.error}
 	<div class="flex min-h-screen items-center justify-center">
 		<div class="alert alert-error max-w-md">

@@ -24,7 +24,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const validatedData = RunDcoSchema.parse(data);
 
-		const createdRun = await saveRun(validatedData, null); // No user assigned initially
+		const createdRun = await saveRun(validatedData, null);
 		logger.info({ run: createdRun }, 'Created new run');
 
 		resultEmitter.safeEmit(ServerEvent.RunCreated, createdRun);

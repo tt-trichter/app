@@ -10,13 +10,13 @@
 </script>
 
 <div class="container mx-auto max-w-4xl p-4">
-	<ProfileHeader user={data.user} title="Trichter - Profile" />
+	<ProfileHeader user={data.user} />
 
-	<ProfileInfoCards user={data.user} isOwnProfile={true} />
+	<ProfileInfoCards user={data.user} isOwnProfile={false} />
 
 	<ProfileStats stats={data.stats} />
 
 	<RecentRuns runs={data.recentRuns} />
 
-	<ProfileActions isOwnProfile={true} />
+	<ProfileActions isOwnProfile={false} />
 </div>

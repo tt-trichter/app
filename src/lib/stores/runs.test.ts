@@ -30,7 +30,7 @@ describe('RunsStore', () => {
 				image: 'test.jpg',
 				data: { rate: 10.5, volume: 2.1, duration: 12.0 },
 				createdAt: new Date(),
-				user: { id: '1', name: 'Test User' }
+				user: { id: '1', name: 'Test User', username: 'testuser' }
 			}
 		];
 

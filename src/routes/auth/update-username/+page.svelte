@@ -68,4 +68,8 @@
 			</div>
 		</form>
 	</div>
+
+	<div class="flex justify-center">
+		<a class="btn btn-ghost" href="/app/profile"> ← Back to Profile </a>
+	</div>
 </div>
