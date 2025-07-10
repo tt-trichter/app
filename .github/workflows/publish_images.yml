@@ -16,6 +16,18 @@ env:
   BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
   BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
   GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+  STORAGE_PROVIDER: azure
+
+  MINIO_BASE_URL: empty
+  MINIO_PORT: 9000
+  MINIO_ROOT_USER: empty
+  MINIO_ROOT_PASSWORD: empty
+  MINIO_BUCKET_NAME: emtpy
+
+  AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+  AZURE_CONTAINER_NAME: trichter-images
+
+  PUBLIC_IMAGE_BASE_URL: https://trichterstorage.blob.core.windows.net
   PUBLIC_GOOGLE_CLIENT_ID: 702596510444-k4j5n4vi5q0dkl3tomglpjgitkqcla71.apps.googleusercontent.com
 
 jobs:
@@ -54,15 +66,7 @@ jobs:
       - name: Create .env for docker build
         run: |
           echo "Creating .env file..."
-          cat <<EOF > .env
-          SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-          DATABASE_URL=${{ secrets.DATABASE_URL }}
-          BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
-          BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
-          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          PUBLIC_GOOGLE_CLIENT_ID=702596510444-k4j5n4vi5q0dkl3tomglpjgitkqcla71.apps.googleusercontent.com
-          EOF
+          printenv > .env
 
       - name: Build and push Docker image
         id: push
