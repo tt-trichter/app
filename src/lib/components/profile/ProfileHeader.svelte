@@ -25,7 +25,9 @@
 					{#if user.image}
 						<img src={user.image} alt="Profile" />
 					{:else}
-						<User size={48} />
+						<div class="flex h-full w-full items-center justify-center">
+							<User size={48} />
+						</div>
 					{/if}
 				</div>
 			</div>
