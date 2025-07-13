@@ -39,7 +39,7 @@ export const runValidation = {
 	duration: z.number().positive('Duration must be a positive number'),
 	rate: z.number().positive('Rate must be a positive number'),
 	volume: z.number().positive('Volume must be a positive number'),
-	image: z.string().min(1, 'Image resource must not be empty')
+	image: z.string().default('trichter-images/placeholder.jpg')
 };
 
 export const createRunSchema = z.object(runValidation);

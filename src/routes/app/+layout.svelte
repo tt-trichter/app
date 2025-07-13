@@ -3,8 +3,13 @@
 	import type { ActiveTab } from '$lib/components/dock/dock';
 	import Dock from '$lib/components/dock/Dock.svelte';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import UpdatePrompt from '$lib/components/pwa/UpdatePrompt.svelte';
+	import OfflineIndicator from '$lib/components/pwa/OfflineIndicator.svelte';
+	import { pwaState } from '$lib/stores/pwa.svelte';
 
 	let { children } = $props();
+
+	let showUpdatePrompt = $state(false);
 
 	let active: ActiveTab = $derived.by(() => {
 		const path = page.url.pathname;
@@ -12,6 +17,13 @@
 		if (path.startsWith('/app/leaderboard')) return 'Leaderboard';
 		if (path.startsWith('/app/profile')) return 'Profile';
 		return 'Other';
+	});
+
+	// Watch for update availability using $effect
+	$effect(() => {
+		if (pwaState.needsUpdate) {
+			showUpdatePrompt = true;
+		}
 	});
 </script>
 
@@ -30,3 +42,7 @@
 
 <ToastContainer />
 <Dock {active} />
+
+<!-- PWA Components -->
+<UpdatePrompt bind:show={showUpdatePrompt} />
+<OfflineIndicator showWhenOnline={true} />

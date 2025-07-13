@@ -37,11 +37,11 @@
 	function getStatusText(state: ConnectionState): string {
 		switch (state) {
 			case 'connected':
-				return 'Connected';
+				return 'Live Updates Active';
 			case 'connecting':
 				return 'Connecting...';
 			case 'error':
-				return 'Connection Error';
+				return !navigator.onLine ? 'No Internet Connection' : 'Connection Lost';
 			case 'disconnected':
 				return 'Disconnected';
 			default:
@@ -54,9 +54,27 @@
 			runsStore.reconnect();
 		}
 	}
+
+	// Show more helpful tooltips
+	function getTooltipText(state: ConnectionState): string {
+		switch (state) {
+			case 'connected':
+				return 'Real-time updates are working. New runs and changes will appear automatically.';
+			case 'connecting':
+				return 'Establishing connection for real-time updates...';
+			case 'error':
+				return !navigator.onLine
+					? 'No internet connection. Updates will resume when connection is restored.'
+					: 'Connection lost. Click to retry or refresh the page.';
+			case 'disconnected':
+				return 'Real-time updates are disabled. Click to reconnect.';
+			default:
+				return '';
+		}
+	}
 </script>
 
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2" title={getTooltipText(runsStore.connectionState)}>
 	{#if runsStore.connectionState}
 		{@const IconComponent = getStatusIcon(runsStore.connectionState)}
 		<IconComponent
@@ -74,7 +92,11 @@
 	{/if}
 
 	{#if runsStore.connectionState === 'error' || runsStore.connectionState === 'disconnected'}
-		<button class="btn btn-ghost btn-xs" onclick={handleReconnect} title="Reconnect">
+		<button
+			class="btn btn-ghost btn-xs"
+			onclick={handleReconnect}
+			title="Reconnect to enable live updates"
+		>
 			<RotateCcw size={12} />
 		</button>
 	{/if}

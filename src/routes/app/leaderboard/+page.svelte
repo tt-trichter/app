@@ -5,6 +5,7 @@
 	import type { RunWithUser } from '$lib/models/run';
 	import Stats from '$lib/components/Stats.svelte';
 	import LeaderboardTable from '$lib/components/LeaderboardTable.svelte';
+	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 	import { runsStore } from '$lib/stores/runs.svelte';
 	import { useFormHandler } from '$lib/composables/useFormHandler.svelte';
 	import { useUserSelection } from '$lib/composables/useUserSelection.svelte';
@@ -31,7 +32,12 @@
 
 <div class="flex flex-col items-center">
 	<div class="w-full space-y-6 py-4 sm:py-8">
-		<h1 class="text-primary text-center text-3xl font-bold sm:text-4xl">Leaderboard</h1>
+		<div class="flex items-center justify-between">
+			<h1 class="text-primary flex-grow text-center text-3xl font-bold sm:text-4xl">Leaderboard</h1>
+			<div class="flex items-center gap-2">
+				<ConnectionStatus showText={false} />
+			</div>
+		</div>
 
 		{#if runsStore.error}
 			<div class="alert alert-error">

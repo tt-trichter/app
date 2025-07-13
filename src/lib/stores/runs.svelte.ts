@@ -6,7 +6,7 @@ import { browser } from '$app/environment';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
-// Enhanced runs store with better SSE connection magement
+// Enhanced runs store with better SSE connection management
 export class RunsStore {
 	runs = $state<RunWithUser[]>([]);
 	isLoading = $state(false);
@@ -17,11 +17,14 @@ export class RunsStore {
 	private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 	private maxReconnectAttempts = 5;
 	private reconnectAttempts = 0;
+	private lastEventTime = $state<number | null>(null);
+	private connectionQuality = $state<'good' | 'poor' | 'unknown'>('unknown');
 
 	constructor() {
 		// Only setup SSE in browser environment
 		if (browser) {
 			this.setupServerSideEvents();
+			this.setupNetworkListeners();
 		}
 	}
 
@@ -112,8 +115,7 @@ export class RunsStore {
 	// Manual reconnection
 	reconnect() {
 		this.disconnect();
-		this.reconnectAttempts = 0;
-		this.setupServerSideEvents();
+		this.checkConnectivityAndRetry();
 	}
 
 	// Disconnect SSE
@@ -134,6 +136,21 @@ export class RunsStore {
 	// Cleanup method for when store is destroyed
 	destroy() {
 		this.disconnect();
+	}
+
+	// Track event activity for connection quality
+	private updateEventActivity() {
+		this.lastEventTime = Date.now();
+		this.connectionQuality = 'good';
+
+		// Check connection quality periodically
+		setTimeout(() => {
+			const timeSinceLastEvent = Date.now() - (this.lastEventTime || 0);
+			if (timeSinceLastEvent > 60000) {
+				// 1 minute
+				this.connectionQuality = 'poor';
+			}
+		}, 60000);
 	}
 
 	// Setup server-side events with enhanced error handling and reconnection
@@ -159,40 +176,64 @@ export class RunsStore {
 			this.connectionState = 'connected';
 			this.reconnectAttempts = 0;
 
-			// Handle new runs
+			// Handle new runs with better error handling
 			eventSource
 				.select(ServerEvent.RunCreated)
 				.json<RunWithUser>()
 				.subscribe((value: RunWithUser) => {
-					if (!value) return;
-					this.updateOrAddRun(value);
-					toast.success(
-						`New run by ${value.user?.name || 'Unknown'}: ${value.data.rate.toFixed(2)} L/min!`
-					);
+					try {
+						if (!value || !value.id) {
+							console.warn('Received invalid RunCreated event:', value);
+							return;
+						}
+						this.updateEventActivity();
+						this.updateOrAddRun(value);
+						toast.success(
+							`New run by ${value.user?.name || 'Unknown'}: ${value.data.rate.toFixed(2)} L/min!`
+						);
+					} catch (error: unknown) {
+						console.error('Error handling RunCreated event:', error);
+					}
 				});
 
-			// Handle run updates
+			// Handle run updates with better error handling
 			eventSource
 				.select(ServerEvent.RunUpdated)
 				.json<RunWithUser>()
 				.subscribe((value: RunWithUser) => {
-					if (!value) return;
-					this.updateOrAddRun(value);
-					toast.info(
-						`Run updated: ${value.user?.name || 'Unknown'} - ${value.data.rate.toFixed(2)} L/min`
-					);
+					try {
+						if (!value || !value.id) {
+							console.warn('Received invalid RunUpdated event:', value);
+							return;
+						}
+						this.updateEventActivity();
+						this.updateOrAddRun(value);
+						toast.info(
+							`Run updated: ${value.user?.name || 'Unknown'} - ${value.data.rate.toFixed(2)} L/min`
+						);
+					} catch (error: unknown) {
+						console.error('Error handling RunUpdated event:', error);
+					}
 				});
 
-			// Handle run deletions
+			// Handle run deletions with better error handling
 			eventSource
 				.select(ServerEvent.RunDeleted)
 				.json<{ id: string }>()
 				.subscribe((value: { id: string }) => {
-					if (!value?.id) return;
-					this.removeRun(value.id);
-					toast.warning('Run deleted');
+					try {
+						if (!value?.id) {
+							console.warn('Received invalid RunDeleted event:', value);
+							return;
+						}
+						this.updateEventActivity();
+						this.removeRun(value.id);
+						toast.warning('Run deleted');
+					} catch (error: unknown) {
+						console.error('Error handling RunDeleted event:', error);
+					}
 				});
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error('Failed to setup SSE connection:', error);
 			this.handleConnectionError(error);
 		}
@@ -212,12 +253,68 @@ export class RunsStore {
 			);
 
 			this.reconnectTimeout = setTimeout(() => {
-				this.setupServerSideEvents();
+				// Only retry if we're still in an error state and the user hasn't manually disconnected
+				if (this.connectionState === 'error') {
+					this.setupServerSideEvents();
+				}
 			}, delay);
 		} else {
 			console.error('Max reconnection attempts reached');
-			toast.error('Lost connection to server. Please refresh the page.');
+			toast.error('Lost connection to server. Please refresh the page or click reconnect.');
 		}
+	}
+
+	// Check for network connectivity and retry connection
+	checkConnectivityAndRetry() {
+		if (!browser) return;
+
+		// Check if online
+		if (!navigator.onLine) {
+			console.log('Device is offline, waiting for network...');
+			this.connectionState = 'error';
+			return;
+		}
+
+		// Reset reconnection attempts when manually retrying
+		this.reconnectAttempts = 0;
+		this.setupServerSideEvents();
+	}
+
+	// Setup network connectivity listeners
+	private setupNetworkListeners() {
+		if (!browser) return;
+
+		// Listen for online/offline events
+		window.addEventListener('online', () => {
+			console.log('Network connection restored');
+			if (this.connectionState === 'error' || this.connectionState === 'disconnected') {
+				this.checkConnectivityAndRetry();
+			}
+		});
+
+		window.addEventListener('offline', () => {
+			console.log('Network connection lost');
+			this.connectionState = 'error';
+			this.disconnect();
+		});
+
+		// Listen for visibility changes to reconnect when tab becomes active
+		document.addEventListener('visibilitychange', () => {
+			if (
+				!document.hidden &&
+				(this.connectionState === 'error' || this.connectionState === 'disconnected')
+			) {
+				console.log('Tab became visible, checking connection...');
+				setTimeout(() => this.checkConnectivityAndRetry(), 1000);
+			}
+		});
+	}
+
+	get isConnecting() {
+		return this.connectionState === 'connecting';
+	}
+	get hasError() {
+		return this.connectionState === 'error';
 	}
 }
 
