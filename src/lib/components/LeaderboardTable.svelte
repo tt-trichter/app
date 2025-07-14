@@ -93,50 +93,43 @@
 								{#if isLoading}
 									<div class="skeleton h-12 w-12 rounded"></div>
 									<div class="skeleton h-6 w-32"></div>
+								{:else if run.user?.name}
+									<a
+										href="/app/profile/{run.user.username}"
+										class="link link-primary hover:link-accent font-semibold no-underline"
+									>
+										{run.user.name}
+									</a>
 								{:else}
-									<img
-										class="h-12 w-12 rounded object-scale-down"
-										src={getImageUrl(run.image)}
-										alt="Image of run {i}"
-									/>
-									{#if run.user?.name}
-										<a
-											href="/app/profile/{run.user.username}"
-											class="link link-primary hover:link-accent font-semibold no-underline"
-										>
-											{run.user.name}
-										</a>
-									{:else}
-										<form
-											class="flex w-full flex-col gap-2"
-											method="POST"
-											action="?/updateName"
-											use:enhance
-										>
-											<input type="hidden" name="id" value={run.id} />
-											<input
-												type="hidden"
-												name="user-id"
-												value={getSelectedUser?.(run.id)?.id || ''}
-											/>
-											<div class="flex gap-2">
-												<div class="flex-1">
-													<UserAutocomplete
-														placeholder="Search for user..."
-														onSelect={(user) => onUserSelect?.(run.id, user)}
-														required
-													/>
-												</div>
-												<button
-													class="btn btn-sm"
-													type="submit"
-													disabled={!getSelectedUser?.(run.id)?.id}
-												>
-													<Check size={16} />
-												</button>
+									<form
+										class="flex w-full flex-col gap-2"
+										method="POST"
+										action="?/updateName"
+										use:enhance
+									>
+										<input type="hidden" name="id" value={run.id} />
+										<input
+											type="hidden"
+											name="user-id"
+											value={getSelectedUser?.(run.id)?.id || ''}
+										/>
+										<div class="flex gap-2">
+											<div class="flex-1">
+												<UserAutocomplete
+													placeholder="Search for user..."
+													onSelect={(user) => onUserSelect?.(run.id, user)}
+													required
+												/>
 											</div>
-										</form>
-									{/if}
+											<button
+												class="btn btn-sm"
+												type="submit"
+												disabled={!getSelectedUser?.(run.id)?.id}
+											>
+												<Check size={16} />
+											</button>
+										</div>
+									</form>
 								{/if}
 							</div>
 
@@ -190,7 +183,6 @@
 					<tr>
 						<th></th>
 						<th>Name</th>
-						<th>Image</th>
 						<th>Time</th>
 						<th>Amount</th>
 						<th>Flow Rate</th>
@@ -248,17 +240,6 @@
 										{/if}
 									</td>
 								{/if}
-								<td>
-									{#if isLoading}
-										<div class="skeleton h-10 w-10 rounded"></div>
-									{:else}
-										<img
-											class="h-10 w-10 object-scale-down"
-											src={getImageUrl(run.image)}
-											alt="Image of run {i}"
-										/>
-									{/if}
-								</td>
 								<td>
 									{#if isLoading}
 										<div class="skeleton h-4 w-12"></div>
