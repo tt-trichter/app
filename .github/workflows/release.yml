@@ -2,36 +2,220 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  pull-requests: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  release:
+  # Detect changes to determine which services to release
+  changes:
+    name: Detect Changes
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: write
-      attestations: write
-      id-token: write
-
+    outputs:
+      web: ${{ steps.changes.outputs.web }}
+      api: ${{ steps.changes.outputs.api }}
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          fetch-depth: 0
+        
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          base: ${{ github.event.before }}
+          filters: |
+            web:
+              - 'web/**'
+            api:
+              - 'api/**'
 
-      - name: Install Dependencies
-        run: npm install
+  # Semantic release for the main repository
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    needs: changes
+    outputs:
+      new-release-published: ${{ steps.semantic.outputs.new-release-published }}
+      new-release-version: ${{ steps.semantic.outputs.new-release-version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lint code
-        run: npm run lint
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Run tests
-        run: npm run test
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: web
+        run: bun install
 
       - name: Run semantic-release
-        run: npm run semantic-release
+        id: semantic
+        working-directory: web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          output=$(bun run semantic-release)
+          echo "$output"
+          # Extract outputs from semantic-release (this depends on your semantic-release config)
+          # For now, we'll use a simple approach
+          if echo "$output" | grep -q "Published release"; then
+            echo "new-release-published=true" >> $GITHUB_OUTPUT
+            version=$(echo "$output" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+            echo "new-release-version=${version}" >> $GITHUB_OUTPUT
+          else
+            echo "new-release-published=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Build and test web application
+  web-build:
+    name: Build Web Application
+    runs-on: ubuntu-latest
+    needs: [changes, semantic-release]
+    if: ${{ needs.changes.outputs.web == 'true' || needs.semantic-release.outputs.new-release-published == 'true' }}
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Type check
+        run: bun run check
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+  # Build and test API application
+  api-build:
+    name: Build API Application
+    runs-on: ubuntu-latest
+    needs: [changes, semantic-release]
+    if: ${{ needs.changes.outputs.api == 'true' || needs.semantic-release.outputs.new-release-published == 'true' }}
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Test
+        run: go test -v -race ./...
+
+      - name: Build
+        run: go build -v -o bin/api ./cmd/api
+
+  # Build and push Docker images
+  docker-release:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [changes, semantic-release, web-build, api-build]
+    if: ${{ needs.semantic-release.outputs.new-release-published == 'true' }}
+    strategy:
+      matrix:
+        include:
+          - service: web
+            context: web
+            dockerfile: web/Dockerfile
+            condition: ${{ needs.changes.outputs.web == 'true' || needs.semantic-release.outputs.new-release-published == 'true' }}
+          - service: api
+            context: api
+            dockerfile: api/Dockerfile
+            condition: ${{ needs.changes.outputs.api == 'true' || needs.semantic-release.outputs.new-release-published == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        if: ${{ matrix.condition }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        if: ${{ matrix.condition }}
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        if: ${{ matrix.condition }}
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        if: ${{ matrix.condition }}
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=auto
+            prefix=${{ matrix.service }}-
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},value=${{ needs.semantic-release.outputs.new-release-version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.semantic-release.outputs.new-release-version }}
+            type=semver,pattern={{major}},value=${{ needs.semantic-release.outputs.new-release-version }}
+            type=sha,format=short
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        if: ${{ matrix.condition }}
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        if: ${{ matrix.condition }}
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true

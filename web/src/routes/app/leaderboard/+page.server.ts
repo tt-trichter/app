@@ -1,4 +1,3 @@
-import { getAllRunsWithUsers, updateRunWithUser, deleteRun } from '$lib/server/db/router/runs';
 import { ServerEvent, resultEmitter } from '$lib/server/events';
 import { auth } from '$lib/auth';
 import { Role } from '$lib/models/roles';
@@ -7,6 +6,7 @@ import type { Actions, PageServerLoad } from './$types';
 import type { RunWithUser } from '$lib/models/run';
 import { validateRequiredFields } from '$lib/utils/validation';
 import { structuredLogger } from '$lib/utils/structuredLogger';
+import { runsApi } from '$lib/api/goApi';
 
 export const load: PageServerLoad = async ({ request, url }) => {
 	const session = await auth.api.getSession({
@@ -21,7 +21,12 @@ export const load: PageServerLoad = async ({ request, url }) => {
 	// This reduces database queries when navigating between pages
 	let runs: RunWithUser[] = [];
 	if (isInitialLoad || forceRefresh) {
-		runs = await getAllRunsWithUsers();
+		try {
+			runs = await runsApi.getRuns();
+		} catch (error) {
+			structuredLogger.api.error('Failed to load runs from Go API', error);
+			runs = []; // Fallback to empty array
+		}
 	}
 
 	return {
@@ -47,19 +52,23 @@ export const actions: Actions = {
 				return { error: 'Missing required fields' };
 			}
 
-			const updated = await updateRunWithUser(id, userId);
-
-			if (updated) {
-				structuredLogger.business.info('Run updated successfully', { runId: id, userId });
-				resultEmitter.safeEmit(ServerEvent.RunUpdated, updated);
+			// Call Go API instead of direct database
+			try {
+				await runsApi.updateRunUser(id, userId);
+				structuredLogger.business.info('Run updated successfully via Go API', { runId: id, userId });
+				
+				// Note: For full SSE compatibility, we'd need to fetch the updated run data
+				// For now, we'll skip the SSE emission and rely on client-side state updates
+				// TODO: Implement proper SSE events in Go API
+				
 				return { success: true };
+			} catch (apiError) {
+				structuredLogger.business.error('Failed to update run via Go API', apiError, {
+					runId: id,
+					userId
+				});
+				return { error: 'Failed to update run' };
 			}
-
-			structuredLogger.business.error('Failed to update run', new Error('Update failed'), {
-				runId: id,
-				userId
-			});
-			return { error: 'Failed to update run' };
 		} catch (error) {
 			structuredLogger.api.error('Unexpected error updating run', error);
 			return { error: 'An unexpected error occurred' };
@@ -88,22 +97,24 @@ export const actions: Actions = {
 				return fail(400, { error: 'Missing run ID' });
 			}
 
-			const deleted = await deleteRun(runId);
-
-			if (deleted) {
-				structuredLogger.business.info('Run deleted successfully', {
+			// Call Go API instead of direct database
+			try {
+				await runsApi.deleteRun(runId);
+				structuredLogger.business.info('Run deleted successfully via Go API', {
 					runId,
 					adminId: session.user.id
 				});
-				// Emit deletion event for real-time updates
+				
+				// Still emit SSE event for backward compatibility
 				resultEmitter.safeEmit(ServerEvent.RunDeleted, { id: runId });
+				
 				return { success: true, message: 'Run deleted successfully' };
+			} catch (apiError) {
+				structuredLogger.business.error('Failed to delete run via Go API', apiError, {
+					runId
+				});
+				return fail(500, { error: 'Failed to delete run' });
 			}
-
-			structuredLogger.business.error('Failed to delete run', new Error('Delete failed'), {
-				runId
-			});
-			return fail(500, { error: 'Failed to delete run' });
 		} catch (error) {
 			structuredLogger.api.error('Unexpected error deleting run', error);
 			return fail(500, { error: 'An unexpected error occurred' });

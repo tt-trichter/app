@@ -4,6 +4,8 @@ import { produce } from 'sveltekit-sse';
 import type { RequestHandler } from './$types';
 import { logger } from '$lib/logger';
 
+// For now, we'll keep the existing SvelteKit SSE implementation
+// and gradually migrate to Go API SSE when it's fully implemented
 export const POST: RequestHandler = () => {
 	let onNew: (entry: RunWithUser) => void;
 	let onUpdate: (entry: RunWithUser) => void;
@@ -23,6 +25,9 @@ export const POST: RequestHandler = () => {
 			resultEmitter.on(ServerEvent.RunCreated, onNew);
 			resultEmitter.on(ServerEvent.RunUpdated, onUpdate);
 			resultEmitter.on(ServerEvent.RunDeleted, onDelete);
+
+			// TODO: In the future, we could proxy SSE events from Go API
+			// For now, we maintain the existing event emitter approach
 		},
 		{
 			stop() {

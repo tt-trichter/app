@@ -5,8 +5,8 @@ node_modules
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
+.svelte-kit
+build
 
 # OS
 .DS_Store
@@ -28,3 +28,4 @@ vite.config.ts.timestamp-*
 .direnv
 
 static/uploads
+
