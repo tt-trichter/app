@@ -15,6 +15,7 @@ import (
 type Server struct {
 	port int
 	db   database.Service
+	hub  *Hub
 }
 
 func NewServer() *http.Server {
@@ -22,7 +23,9 @@ func NewServer() *http.Server {
 	NewServer := &Server{
 		port: port,
 		db:   database.NewService(),
+		hub:  NewHub(),
 	}
+	go NewServer.hub.Run()
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", NewServer.port),
@@ -33,4 +36,11 @@ func NewServer() *http.Server {
 	}
 
 	return server
+}
+
+func (s *Server) Notify(event EventType, data any) {
+	s.hub.broadcast <- Message{
+		Event: event,
+		Data:  data,
+	}
 }

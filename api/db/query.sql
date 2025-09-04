@@ -10,16 +10,15 @@ RETURNING id, user_id, data, created_at, image;
 -- name: GetAllRunsWithUsers :many
 SELECT 
     r.id, 
-    r.user_id, 
     r.data, 
     r.image, 
     r.created_at,
-    u.id as user_id_full,
+    u.id as user_id,
     u.name as user_name,
-    u.username as user_username
+    u.display_username as user_username
 FROM runs r
 LEFT JOIN "user" u ON r.user_id = u.id
-ORDER BY (r.data->>'rate')::float DESC;
+ORDER BY r.created_at DESC;
 
 -- name: UpdateRunWithUser :one
 UPDATE runs 

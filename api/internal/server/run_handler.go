@@ -27,10 +27,14 @@ type RunData struct {
 
 type RunDao struct {
 	ID        string    `json:"id"`
-	Data      RunDco    `json:"data"`
+	Data      RunData   `json:"data"`
 	Image     string    `json:"image"`
 	CreatedAt time.Time `json:"createdAt"`
 	User      *UserInfo `json:"user"`
+}
+
+type RunMessage struct {
+	ID string `json:"id"`
 }
 
 func (s *Server) getRunsWithUsersHandler(c *gin.Context) {
@@ -52,7 +56,7 @@ func (s *Server) getRunsWithUsersHandler(c *gin.Context) {
 			CreatedAt: run.CreatedAt.Time,
 		}
 
-		var runData RunDco
+		var runData RunData
 		if err := json.Unmarshal(run.Data, &runData); err != nil {
 			log.Printf("Error unmarshaling run data: %v", err)
 			continue
@@ -61,7 +65,7 @@ func (s *Server) getRunsWithUsersHandler(c *gin.Context) {
 
 		if run.UserName.Valid {
 			runWithUser.User = &UserInfo{
-				ID:       run.UserIDFull.String,
+				ID:       run.UserID.String,
 				Name:     run.UserName.String,
 				Username: run.UserUsername.String,
 			}
@@ -125,7 +129,7 @@ func (s *Server) createRunHandler(c *gin.Context) {
 
 	log.Printf("Created new run: %s", savedRun.ID.String())
 
-	// TODO: Emit SSE event for RunCreated
+	s.Notify(RunCreatedEvent, RunMessage{ID: savedRun.ID.String()})
 
 	c.JSON(http.StatusOK, APIResponse{Success: true})
 }
@@ -172,16 +176,13 @@ func (s *Server) updateRunUserHandler(c *gin.Context) {
 
 	log.Printf("Updated run %s with user %s", runID, request.UserID)
 
-	// TODO: Emit SSE event for RunUpdated
+	s.Notify(RunUpdatedEvent, RunMessage{ID: runID})
 
 	c.JSON(http.StatusOK, APIResponse{Success: true})
 }
 
 func (s *Server) deleteRunHandler(c *gin.Context) {
 	runID := c.Param("id")
-
-	// TODO: Implement proper auth check for admin role
-	// For now, we'll skip the auth check as it requires JWT token validation
 
 	var runUUID pgtype.UUID
 	if err := runUUID.Scan(runID); err != nil {
@@ -204,19 +205,7 @@ func (s *Server) deleteRunHandler(c *gin.Context) {
 
 	log.Printf("Deleted run: %s", runID)
 
-	// TODO: Emit SSE event for RunDeleted
+	s.Notify(RunDeletedEvent, RunMessage{ID: runID})
 
 	c.JSON(http.StatusOK, APIResponse{Success: true})
-}
-
-func (s *Server) runsSSEHandler(c *gin.Context) {
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-	c.Header("Access-Control-Allow-Origin", "*")
-
-	// TODO: Implement proper SSE with event emitter
-	// For now, just keep the connection open
-
-	<-c.Request.Context().Done()
 }

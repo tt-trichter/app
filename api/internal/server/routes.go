@@ -22,11 +22,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	v2 := r.Group("/api/v2")
 	{
+		v2.GET("/ws", s.wsHandler)
+
 		runs := v2.Group("/runs")
 		{
 			runs.GET("", s.getRunsWithUsersHandler)
 			runs.POST("", s.createRunHandler)
-			runs.POST("/sse", s.runsSSEHandler)
 			runs.PUT("/:id/user", s.updateRunUserHandler)
 			runs.DELETE("/:id", s.deleteRunHandler)
 		}
